@@ -20,10 +20,11 @@ class Rocket final
 
         enum class RcsEngineMode
         {
-            IDLE,
             CW,
             CCW,
+            IDLE,
             STABILIZE,
+            PREV_PASSIVE_MODE
         };
 
         void update(double dt);
@@ -47,6 +48,7 @@ class Rocket final
         */
         void toggle_engine(EngineMode mode);
         void toggle_rcs(RcsEngineMode RCS_mode);
+        void switch_rcs_stabilization_mode();
 
         ///TODO: add other preferences
 
@@ -97,8 +99,9 @@ class Rocket final
 
         double thrust_         = 0;
 
-        EngineMode engine_mode;
-        RcsEngineMode rcs_mode_;
+        EngineMode engine_mode_ = EngineMode::IDLE;
+        RcsEngineMode rcs_mode_ = RcsEngineMode::IDLE;
+        RcsEngineMode prev_passive_mode_ = RcsEngineMode::IDLE;
 
         void update_thrust(double dt);
         void update_rotation_accel_();

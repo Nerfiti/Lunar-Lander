@@ -10,7 +10,6 @@ Rocket::Rocket(RectTexture &&rect, bool expand):
     collider_(Vector2d(rect.get_width(), rect.get_height()))
     {}
 
-#include <iostream>
 void Rocket::update(double dt)
 {
     update_rotation_accel_();
@@ -52,8 +51,43 @@ void Rocket::set_stabilization_treshold(double treshold_speed) { treshold_speed_
 /*
 *   Dynamic preferences of the rocket (getters/setters)
 */
-void Rocket::toggle_engine(   EngineMode mode) { engine_mode = mode; }
-void Rocket::toggle_rcs   (RcsEngineMode mode) {   rcs_mode_ = mode; }
+void Rocket::toggle_engine(EngineMode mode) { engine_mode_ = mode; }
+
+void Rocket::toggle_rcs(RcsEngineMode mode) 
+{
+    switch (mode)
+    {
+        case RcsEngineMode::PREV_PASSIVE_MODE:
+        {
+            rcs_mode_ = prev_passive_mode_;
+            return;
+        }
+        case RcsEngineMode::IDLE:
+        case RcsEngineMode::STABILIZE:
+        {
+            prev_passive_mode_ = mode;
+            //fallthrough
+        }
+        case RcsEngineMode::CCW:
+        case RcsEngineMode::CW:
+        {
+            rcs_mode_ = mode;
+            return;
+        }
+    }
+}
+
+void Rocket::switch_rcs_stabilization_mode()
+{
+    if (prev_passive_mode_ == RcsEngineMode::IDLE)
+    {
+        rcs_mode_ = prev_passive_mode_ = RcsEngineMode::STABILIZE;
+    }
+    else
+    {
+        rcs_mode_ = prev_passive_mode_ = RcsEngineMode::IDLE;
+    }
+}
 
 void Rocket::move(double x, double y)
 {
@@ -101,7 +135,7 @@ void Rocket::update_thrust(double dt)
         return;
     }
 
-    switch (engine_mode)
+    switch (engine_mode_)
     {
         case EngineMode::SET_MAX_THRUST:
         {
@@ -151,6 +185,7 @@ void Rocket::update_rotation_accel_()
             break;
         }
         case RcsEngineMode::IDLE:
+        case RcsEngineMode::PREV_PASSIVE_MODE:
         {
             rotation_accel_ = 0;
             break;

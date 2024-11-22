@@ -18,6 +18,17 @@ namespace
     Planet planet(SCREEN_WIDTH, SCREEN_HEIGHT);
 };
 
+static void handle_input();
+static void key_press_callback(int vk_key_code);
+static void key_release_callback(int vk_key_code);
+static void handle_collisions();
+static void show_fps(float dt);
+static void update_all(float dt);
+
+//----------------------------------------------------------------
+// Four main functions to engine call
+//----------------------------------------------------------------
+
 void initialize() 
 {
     std::srand(time(NULL));
@@ -29,56 +40,12 @@ void initialize()
 
 void act(float dt)
 {
-    static bool need_stabilize = false;
-    static bool was_return_pressed = false;
+    handle_input();
 
-    if (is_key_pressed(VK_ESCAPE))
-        schedule_quit_game();
+    update_all(dt);
+    handle_collisions();
 
-    if (is_key_pressed(VK_UP))
-        rocket.toggle_engine(Rocket::EngineMode::INCREASE_THRUST);
-    else if (is_key_pressed(VK_DOWN))
-        rocket.toggle_engine(Rocket::EngineMode::DECREASE_THRUST);
-    else
-        rocket.toggle_engine(Rocket::EngineMode::IDLE);
-
-    if (is_key_pressed(VK_LEFT))
-        rocket.toggle_rcs(Rocket::RcsEngineMode::CCW);
-    else if (is_key_pressed(VK_RIGHT))
-        rocket.toggle_rcs(Rocket::RcsEngineMode::CW);
-    else
-        rocket.toggle_rcs(need_stabilize ? Rocket::RcsEngineMode::STABILIZE : Rocket::RcsEngineMode::IDLE);
-
-    if (is_key_pressed(VK_RETURN))
-    {
-        if (!was_return_pressed)
-        {
-            need_stabilize = !need_stabilize;
-            rocket.toggle_rcs(Rocket::RcsEngineMode::STABILIZE);
-        }
-        was_return_pressed = true;
-    }
-    else
-    {
-        was_return_pressed = false;
-    }
-
-    rocket.update(dt);
-    if (planet.check_collision(rocket.get_collider()))
-        std::cerr << "COLLISION\n";
-
-    static const size_t frames_to_show_fps = 100;
-    static size_t frame_counter = 0;
-    static double delta_time = 0;
-
-    delta_time += dt;
-    ++frame_counter;
-    if (frame_counter == frames_to_show_fps)
-    {
-        std::cout << "Fps: " << static_cast<size_t>(frame_counter / delta_time) << '\n';
-        delta_time = 0;
-        frame_counter = 0;
-    }
+    show_fps(dt);
 }
 
 void draw()
@@ -94,3 +61,127 @@ void draw()
 *   Nothing to free because of destructors
 */
 void finalize() {}
+
+//-----------------------------------------------------------------
+//  There are some stuff functions for game
+//-----------------------------------------------------------------
+
+#define check_key(VK_KEY)                                           \
+    {                                                               \
+        static bool was_##VK_KEY##_pressed = false;                 \
+        bool is_##VK_KEY##_pressed_now = is_key_pressed(VK_KEY);    \
+        if (is_##VK_KEY##_pressed_now && !was_##VK_KEY##_pressed)   \
+        {                                                           \
+            key_press_callback(VK_KEY);                             \
+            was_##VK_KEY##_pressed = true;                          \
+        }                                                           \
+        if (!is_##VK_KEY##_pressed_now && was_##VK_KEY##_pressed)   \
+        {                                                           \
+            key_release_callback(VK_KEY);                           \
+            was_##VK_KEY##_pressed = false;                         \
+        }                                                           \
+    }
+
+static void handle_input()
+{
+    check_key(VK_DOWN  );
+    check_key(VK_UP    );
+    check_key(VK_LEFT  );
+    check_key(VK_RIGHT );
+    check_key(VK_RETURN);
+    check_key(VK_SPACE );
+    check_key(VK_ESCAPE);
+}
+
+#undef check_key
+
+static void key_press_callback(int vk_key_code)
+{
+    switch (vk_key_code)
+    {
+        case VK_ESCAPE:
+        {
+            schedule_quit_game();
+            break;
+        }
+        case VK_LEFT:
+        {
+            rocket.toggle_rcs(Rocket::RcsEngineMode::CCW);
+            break;
+        }
+        case VK_RIGHT:
+        {
+            rocket.toggle_rcs(Rocket::RcsEngineMode::CW);
+            break;
+        }
+        case VK_UP:
+        {
+            rocket.toggle_engine(Rocket::EngineMode::INCREASE_THRUST);
+            break;
+        }
+        case VK_DOWN:
+        {
+            rocket.toggle_engine(Rocket::EngineMode::DECREASE_THRUST);
+            break;
+        }
+        case VK_RETURN:
+        {
+            rocket.switch_rcs_stabilization_mode();
+            rocket.toggle_rcs(Rocket::RcsEngineMode::PREV_PASSIVE_MODE);
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
+static void key_release_callback(int vk_key_code)
+{
+    switch (vk_key_code)
+    {
+        case VK_LEFT:
+        case VK_RIGHT:
+        {
+            rocket.toggle_rcs(Rocket::RcsEngineMode::PREV_PASSIVE_MODE);
+            break;
+        }
+        case VK_UP:
+        case VK_DOWN:
+        {
+            rocket.toggle_engine(Rocket::EngineMode::IDLE);
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
+static void handle_collisions()
+{
+    if (planet.check_collision(rocket.get_collider()))
+        std::cerr << "COLLISION\n";
+}
+
+static void show_fps(float dt)
+{
+    static const size_t frames_to_show_fps = 100;
+    static size_t frame_counter = 0;
+    static double delta_time = 0;
+
+    delta_time += dt;
+    ++frame_counter;
+    if (frame_counter == frames_to_show_fps)
+    {
+        std::cout << "Fps: " << static_cast<size_t>(frame_counter / delta_time) << '\n';
+        delta_time = 0;
+        frame_counter = 0;
+    }
+}
+
+static void update_all(float dt)
+{
+    rocket.update(dt);
+}
