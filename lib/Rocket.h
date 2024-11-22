@@ -79,7 +79,7 @@ class Rocket final
         double max_hydrazine_                = 1;
         double hydrazine_per_thrust_         = 0.1;
         double g_x_                          = 0;
-        double g_y_                          = 0;
+        double g_y_                          = 10;
         double treshold_speed_for_stabilize_ = 0.001;
 
         /*

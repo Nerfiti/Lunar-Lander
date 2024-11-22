@@ -1,8 +1,8 @@
 #include "Landscape.h"
 
 Landscape::Landscape(uint32_t length):
-    ground_points_({{0, 0}, {length, 0}}),
-    prev_point_(ground_points_.begin())
+    ground_points_(),
+    prev_point_(ground_points_.end())
     {}
 
 void Landscape::add_point(uint32_t x, uint32_t y)
@@ -96,8 +96,7 @@ bool Landscape::check_collision(const RectCollider &collider) const
 
         Segment segment(first_point, second_point);
 
-        ///TODO: Не работает в принципе + высота от нуля считается, а не от height - 1
-        if (collider.check_AABB_segment_collision(segment) || collider.check_collision(segment))
+        if (collider.check_AABB_segment_collision(segment) && collider.check_collision(segment))
             return true;
 
         ++it;
@@ -126,6 +125,6 @@ int64_t Landscape::try_in_cache(uint32_t x) const
 uint32_t Landscape::interpolate(uint32_t x, uint32_t left, uint32_t right, uint32_t left_height, uint32_t right_height) const
 {
     double t = static_cast<double>(right - x) / (right - left);
-    t = -2 * t * t * t + 3 * t * t;
+    // t = -2 * t * t * t + 3 * t * t;
     return left_height * t + right_height * (1 - t);
 }

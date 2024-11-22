@@ -7,7 +7,7 @@ RectCollider::RectCollider(Vector2d size, Vector2d position, Vector2d pivot, dou
     Collider(),
     transform_(size, position, pivot, angle),
     need_update_vertices(true)
-    {}
+    { update_AABB(); }
 
 bool RectCollider::check_collision(const Segment& other) const
 {
@@ -19,7 +19,7 @@ bool RectCollider::check_collision(const Segment& other) const
     segment_vertices[0] = Vector2d(other.a_x, other.a_y);
     segment_vertices[1] = Vector2d(other.b_x, other.b_y);
 
-    return !SAT_check<Number_of_vertices, Vertices_num_in_segment>(get_vertices(), segment_vertices);
+    return !SAT_check(get_vertices(), segment_vertices);
 }
 
 bool RectCollider::check_collision(const RectCollider& other) const
@@ -27,7 +27,7 @@ bool RectCollider::check_collision(const RectCollider& other) const
     if (!box_.is_intersect(other.get_AABB()))
         return false;
 
-    return !SAT_check<Number_of_vertices, Number_of_vertices>(get_vertices(), other.get_vertices());
+    return !SAT_check(get_vertices(), other.get_vertices());
 }
 
 void RectCollider::move(double x, double y)
@@ -109,9 +109,9 @@ template<size_t first_vertices, size_t second_vertices>
 bool RectCollider::SAT_check(const std::array<Vector2d, first_vertices> &lhs,
                              const std::array<Vector2d, second_vertices> &rhs) const
 {
-    if (SAT_check_only_first_edges<first_vertices, second_vertices>(lhs, rhs))
+    if (SAT_check_only_first_edges(lhs, rhs))
         return true;
-    if (SAT_check_only_first_edges<second_vertices, first_vertices>(rhs, lhs))
+    if (SAT_check_only_first_edges(rhs, lhs))
         return true;
 
     return false;
@@ -154,12 +154,11 @@ Vector2d RectCollider::get_min_max_projection_coord(const std::array<Vector2d, n
 {
     double min = target_axis.dot(array[0]);
     double max = target_axis.dot(array[0]);
-
-    for (size_t i = 1; i < number_of_vertices; ++i)
+    for (size_t i = 0; i < number_of_vertices; ++i)
     {
         double coord = target_axis.dot(array[i]);
         min = std::min(min, coord);
-        min = std::max(max, coord);
+        max = std::max(max, coord);
     }
 
     return Vector2d(min, max);

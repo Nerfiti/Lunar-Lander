@@ -28,21 +28,21 @@ AABB::AABB(double left_bound, double right_bound, double top_bound, double botto
 
 AABB::AABB(const Segment &segment): AABB()
 {
-    int left   = std::min(segment.a_x, segment.b_x);
-    int right  = std::max(segment.a_x, segment.b_x);
-    int top    = std::max(segment.a_y, segment.b_y);
-    int bottom = std::min(segment.a_y, segment.b_y);
+    left   = std::min(segment.a_x, segment.b_x);
+    right  = std::max(segment.a_x, segment.b_x);
+    top    = std::max(segment.a_y, segment.b_y);
+    bottom = std::min(segment.a_y, segment.b_y);
 }
 
 AABB::AABB(const Vector2d &first_point, const Vector2d &second_point): 
     AABB(Segment(first_point, second_point))
     {}
 
-bool AABB::is_intersect(const AABB &segment) const
+bool AABB::is_intersect(const AABB &ohter) const
 {
-    if (left > segment.right  || right < segment.left)
+    if (left > ohter.right  || right < ohter.left)
         return false;
-    if (bottom  > segment.top || top < segment.bottom)
+    if (bottom  > ohter.top || top < ohter.bottom)
         return false;
 
     return true;
@@ -78,7 +78,8 @@ bool Collider::check_AABB_segment_collision(const Segment &segment) const
         max_coord = std::max(max_coord, coord);
     }
 
-    if (max_coord < 0 || min_coord > 0)
+    double segment_projection = target_axis.dot(Vector2d(segment.a_x, segment.a_y));
+    if (max_coord < segment_projection || min_coord > segment_projection)
         return false;
 
     return true;

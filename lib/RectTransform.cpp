@@ -98,7 +98,7 @@ Vector2d RectTransform::transform_point(const Vector2d &point) const
     double relative_y = point.y - pivot_.y;
 
     return Vector2d(
-        cos_angle_ * relative_x - sin_angle_ * relative_y + pos_.x,
-        sin_angle_ * relative_x + cos_angle_ * relative_y + pos_.y
+        get_cos() * relative_x - get_sin() * relative_y + pos_.x,
+        get_sin() * relative_x + get_cos() * relative_y + pos_.y
     );
 }

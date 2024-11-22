@@ -14,16 +14,16 @@
 */
 namespace
 {
-    Rocket rocket(RectTexture(Color::White, 100, 100), true);
-    Planet planet(SCREEN_WIDTH);
+    Rocket rocket(RectTexture(Color::White, 50, 80), true);
+    Planet planet(SCREEN_WIDTH, SCREEN_HEIGHT);
 };
 
 void initialize() 
 {
     std::srand(time(NULL));
-    planet.generate_landscape(100, SCREEN_HEIGHT / 4, 150);
+    planet.generate_landscape(50, SCREEN_HEIGHT / 4, 150);
 
-    rocket.set_center(50, 50);
+    rocket.set_center(25, 40);
     rocket.move(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 }
 
