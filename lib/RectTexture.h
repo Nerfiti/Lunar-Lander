@@ -4,10 +4,10 @@
 
 #include "Color.h"
 
-class Rect final
+class RectTexture final
 {
     public:
-        Rect(Color color, size_t width, size_t height);
+        RectTexture(Color color, size_t width, size_t height);
 
         const std::vector<uint32_t> &get_buffer() const;
         const uint32_t get_pixel_color(size_t id) const;

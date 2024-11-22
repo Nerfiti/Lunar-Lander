@@ -3,6 +3,7 @@
 #include <memory.h>
 
 #include "Engine.h"
+#include "Planet.h"
 #include "Rocket.h"
 
 /* 
@@ -13,11 +14,15 @@
 */
 namespace
 {
-    Rocket rocket(Rect(Color::White, 100, 100), true);
+    Rocket rocket(RectTexture(Color::White, 100, 100), true);
+    Planet planet(SCREEN_WIDTH);
 };
 
 void initialize() 
 {
+    std::srand(time(NULL));
+    planet.generate_landscape(100, SCREEN_HEIGHT / 4, 150);
+
     rocket.set_center(50, 50);
     rocket.move(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 }
@@ -59,6 +64,8 @@ void act(float dt)
     }
 
     rocket.update(dt);
+    if (planet.check_collision(rocket.get_collider()))
+        std::cerr << "COLLISION\n";
 
     static const size_t frames_to_show_fps = 100;
     static size_t frame_counter = 0;
@@ -76,8 +83,11 @@ void act(float dt)
 
 void draw()
 {
+    auto buffer_as_1D = reinterpret_cast<uint32_t *>(buffer);
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
-    rocket.draw(reinterpret_cast<uint32_t *>(buffer), SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    planet.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
+    rocket.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 /*

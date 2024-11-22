@@ -1,11 +1,13 @@
 #include "Rocket.h"
 
-Rocket::Rocket(const Rect &rect, bool expand):
-    Sprite(rect, expand)
+Rocket::Rocket(const RectTexture &rect, bool expand):
+    sprite_(rect, expand),
+    collider_(Vector2d(rect.get_width(), rect.get_height()))
     {}
 
-Rocket::Rocket(Rect &&rect, bool expand):
-    Sprite(std::move(rect), expand)
+Rocket::Rocket(RectTexture &&rect, bool expand):
+    sprite_(std::move(rect), expand),
+    collider_(Vector2d(rect.get_width(), rect.get_height()))
     {}
 
 #include <iostream>
@@ -13,8 +15,8 @@ void Rocket::update(double dt)
 {
     update_rotation_accel_();
     update_thrust(dt);
-    accel_x_ = g_x_ + thrust_ * get_sin_phi() / (mass_ + fuel_);
-    accel_y_ = g_y_ - thrust_ * get_cos_phi() / (mass_ + fuel_);
+    accel_x_ = g_x_ + thrust_ * sprite_.get_sin_phi() / (mass_ + fuel_);
+    accel_y_ = g_y_ - thrust_ * sprite_.get_cos_phi() / (mass_ + fuel_);
 
     fuel_ -= thrust_ * dt * fuel_per_thrust_;
     hydrazine_ -= rotation_accel_ * (mass_ + fuel_) * dt * hydrazine_per_thrust_;
@@ -53,6 +55,43 @@ void Rocket::set_stabilization_treshold(double treshold_speed) { treshold_speed_
 void Rocket::toggle_engine(   EngineMode mode) { engine_mode = mode; }
 void Rocket::toggle_rcs   (RcsEngineMode mode) {   rcs_mode_ = mode; }
 
+void Rocket::move(double x, double y)
+{
+    sprite_.move(x, y);
+    collider_.move(x, y);
+}
+
+void Rocket::move(Vector2d offset)
+{
+    move(offset.x, offset.y);
+}
+
+void Rocket::rotate(double angle)
+{
+    sprite_.rotate(angle);
+    collider_.rotate(angle);
+}
+
+const RectCollider &Rocket::get_collider() const
+{
+    return collider_;
+}
+
+void Rocket::draw(uint32_t *buffer, size_t width, size_t height)
+{
+    sprite_.draw(buffer, width, height);
+}
+
+void Rocket::set_center(Vector2d center)
+{
+    set_center(center.x, center.y);
+}
+
+void Rocket::set_center(double x, double y)
+{
+    sprite_.set_center(x, y);
+    collider_.set_pivot(Vector2d(x, y));
+}
 
 void Rocket::update_thrust(double dt)
 {

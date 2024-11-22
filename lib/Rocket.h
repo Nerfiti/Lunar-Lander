@@ -1,12 +1,13 @@
 #pragma once
 
+#include "RectCollider.h"
 #include "Sprite.h"
 
-class Rocket final : public Sprite
+class Rocket final
 {
     public:
-        Rocket(const Rect &rect, bool expand = true);
-        Rocket(Rect &&rect, bool expand = true);
+        Rocket(const RectTexture &rect, bool expand = true);
+        Rocket(RectTexture &&rect, bool expand = true);
 
         enum class EngineMode
         {
@@ -48,6 +49,23 @@ class Rocket final : public Sprite
         void toggle_rcs(RcsEngineMode RCS_mode);
 
         ///TODO: add other preferences
+
+        /*
+        *   Some methods to impact the rocket transformation without
+        *   using engine (for collisions etc.)
+        */
+        void move(double x, double y);
+        void move(Vector2d offset);
+        void rotate(double angle);
+
+        const RectCollider &get_collider() const;
+
+        /*
+        *   Other
+        */
+        void draw(uint32_t *buffer, size_t width, size_t height);
+        void set_center(Vector2d center);
+        void set_center(double x, double y);
     private:
         /*
         *   Static preferences of the rocket
@@ -61,7 +79,7 @@ class Rocket final : public Sprite
         double max_hydrazine_                = 1;
         double hydrazine_per_thrust_         = 0.1;
         double g_x_                          = 0;
-        double g_y_                          = 10;
+        double g_y_                          = 0;
         double treshold_speed_for_stabilize_ = 0.001;
 
         /*
@@ -79,10 +97,12 @@ class Rocket final : public Sprite
 
         double thrust_         = 0;
 
-
         EngineMode engine_mode;
         RcsEngineMode rcs_mode_;
 
         void update_thrust(double dt);
         void update_rotation_accel_();
+
+        Sprite sprite_;
+        RectCollider collider_;
 };
