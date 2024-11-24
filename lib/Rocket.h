@@ -68,8 +68,6 @@ class Rocket final
         *   Other
         */
         void draw(uint32_t *buffer, size_t width, size_t height);
-        void set_center(Vector2d center);
-        void set_center(double x, double y);
 
     private:
         /*
@@ -109,13 +107,16 @@ class Rocket final
 
         std::vector<Sprite> sprites_;
         std::vector<Vector2d> sprites_relative_positions_;
-        void setup_sprites(bool expand);
-
         std::vector<RectCollider> colliders_;
         std::vector<Vector2d> colliders_relative_positions_;
-        void setup_colliders();
+
+        std::pair<size_t, size_t> setup_part(RectTexture texture, Vector2d center,
+                                             Vector2d relative_position, double angle, bool need_collider = true);
 
         bool is_alive_ = true;
 
-        const double Min_speed_norm_sq_to_destroy = 1000;
+        const double Min_speed_norm_sq_to_destroy = 150;
+
+        RectTexture draw_rocket_body();
+        RectTexture draw_rocket_fire();
 };

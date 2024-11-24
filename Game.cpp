@@ -33,9 +33,9 @@ static void update_all(float dt);
 void initialize() 
 {
     std::srand(time(NULL));
-    planet.generate_landscape(50, SCREEN_HEIGHT / 4, 150);
+    planet.generate_stars();
+    planet.generate_landscape(SCREEN_WIDTH >> 5, SCREEN_HEIGHT / 4, 150);
 
-    rocket.set_center(25, 40);
     rocket.move(SCREEN_WIDTH / 10, SCREEN_HEIGHT / 10);
 }
 
@@ -49,7 +49,7 @@ void act(float dt)
     if (!rocket.is_alive())
         schedule_quit_game();
 
-    show_fps(dt);
+    // show_fps(dt);
 }
 
 void draw()

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <numbers>
 
 #include "Rocket.h"
 
@@ -7,8 +8,24 @@ Rocket::Rocket(Vector2d size, bool expand):
     colliders_(),
     transform_(size)
 {
-    setup_sprites(expand);
-    setup_colliders();
+    double one_by_sqrt2 = 1.0 / std::sqrt(2);
+
+    // Fire of engines (no colliders)
+    auto rocket_fire = draw_rocket_fire();
+    setup_part(rocket_fire, Vector2d(rocket_fire.get_width() / 2, 0), Vector2d(), 0, false);
+
+    // Rocket roof (square rotated on 45 degree)
+    auto rocket_roof = RectTexture(Color::Red, size.x * one_by_sqrt2, size.x * one_by_sqrt2);
+    setup_part(rocket_roof, rocket_roof.get_size() / 2, Vector2d(0, -size.y / 2 + size.x / 4), -std::numbers::pi / 4);
+
+    // Rocket body with area for roof. (size.x / 4) - diagonal of roof square
+    auto rocket_body = draw_rocket_body();
+    setup_part(rocket_body, size / 2, Vector2d(0, size.x / 4), 0);
+
+    // Rocket landing legs
+    auto rocket_leg = RectTexture(0xff424242, size.x / 8, size.y / 4);
+    setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0), Vector2d(-size.x / 2, size.y / 2),  std::numbers::pi / 8);
+    setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0), Vector2d( size.x / 2, size.y / 2), -std::numbers::pi / 8);
 }
 
 #include <iostream>
@@ -97,11 +114,10 @@ void Rocket::switch_rcs_stabilization_mode()
     }
 }
 
-#include <iostream>
 void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &info, float dt, size_t number_of_collisions)
 {
-    // if (velocity_.norm_sq() > Min_speed_norm_sq_to_destroy)
-        // is_alive_ = false;
+    if (velocity_.norm_sq() > Min_speed_norm_sq_to_destroy)
+        is_alive_ = false;
 
     static constexpr double Min_mtv_norm_sq_to_react = 1e-15;
 
@@ -142,21 +158,24 @@ void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &i
 
     const auto &rect_size = collider.get_transform().get_size();
 
-    // Some physics
-    double delta_rot_speed = -3 * (most_remote_point - transform_.get_position()).dot(delta_v.normal());
-    delta_rot_speed /= rect_size.norm_sq() + 3 * collider_position.norm_sq();
-    delta_rot_speed /= number_of_collisions;
-
     velocity_ += delta_v;
+    Vector2d horizontal_velocity = velocity_.dot(normal.normal()) * normal.normal();
+
+    static constexpr double friction_factor = 0.5;
+    velocity_ -= horizontal_velocity * friction_factor;
+
     acceleration_ -= acceleration_.dot(mtv) * mtv / mtv.norm_sq();
 
+    // Some physics
+    static constexpr size_t Inertia_factor = 3;
+    Vector2d rel_pos = most_remote_point - transform_.get_position();
+    double delta_rot_speed = -Inertia_factor * (rel_pos).dot((delta_v - horizontal_velocity * friction_factor).normal());
+    delta_rot_speed /= rect_size.norm_sq() + Inertia_factor * (collider_position.norm_sq() + (rel_pos).norm_sq());
+    delta_rot_speed /= number_of_collisions;
+
     rotation_speed_ += delta_rot_speed;
-
-    rotation_speed_ += delta_v.dot(normal) * velocity_.dot(normal.normal()) / 10000;
-
 }
 
-#include <iostream>
 void Rocket::move(double x, double y)
 {
     size_t sprites_num = std::min(sprites_.size(), sprites_relative_positions_.size());
@@ -203,16 +222,6 @@ void Rocket::draw(uint32_t *buffer, size_t width, size_t height)
 {
     for (const auto &sprite : sprites_)
         sprite.draw(buffer, width, height);
-}
-
-void Rocket::set_center(Vector2d center)
-{
-    set_center(center.x, center.y);
-}
-
-void Rocket::set_center(double x, double y)
-{
-    transform_.set_pivot(Vector2d(x, y));
 }
 
 void Rocket::update_thrust(double dt)
@@ -291,68 +300,69 @@ void Rocket::update_rotation_accel_()
     }
 }
 
-///TODO: REMOVE COPYPASTE
-///TODO: Draw some rocket
-void Rocket::setup_sprites(bool expand)
+std::pair<size_t, size_t> Rocket::setup_part(RectTexture texture, Vector2d center, 
+                                             Vector2d relative_position, double angle, bool need_collider)
 {
-    ///TODO: understand magic numbers and remove it
-    Vector2d size = transform_.get_size();
-    double one_by_sqrt2 = 1.0 / std::sqrt(2);
+    Vector2d size = Vector2d(texture.get_width(), texture.get_height());
+    Sprite sprite(texture);
+    sprite.set_center(center.x, center.y);
+    sprite.rotate(angle);
+    sprites_.push_back(sprite);
+    sprites_relative_positions_.push_back(relative_position);
 
-    Sprite fire(RectTexture(Color::Yellow, size.x / 2, size.y / 2));
-    fire.set_center(size.x / 4, 0);
-    sprites_.push_back(fire);
-    sprites_relative_positions_.push_back(Vector2d(0, 0));
+    if (need_collider)
+    {
+        RectCollider collider(size);
+        collider.set_pivot(center);
+        collider.rotate(angle);
+        colliders_.push_back(collider);
+        colliders_relative_positions_.push_back(relative_position);
+    }
 
-    Sprite main_roof(RectTexture(Color::Red, one_by_sqrt2 * size.x, one_by_sqrt2 * size.x));
-    main_roof.set_center(one_by_sqrt2 * size.x / 2, one_by_sqrt2 * size.x / 2);
-    main_roof.rotate(std::numbers::pi / 4);
-    sprites_.push_back(main_roof);
-    sprites_relative_positions_.push_back(Vector2d(0, -(size.y - size.x / 2) / 2));
-
-    Sprite main(RectTexture(Color::White, size.x, size.y - size.x / 4));
-    main.set_center(size.x / 2, size.y / 2);
-    sprites_.push_back(main);
-    sprites_relative_positions_.push_back(Vector2d(0, size.x / 4));
-
-    Sprite left_foot(RectTexture(0xff424242, size.x / 5, size.y / 3));
-    left_foot.set_center(size.x / 10, 0);
-    left_foot.rotate(std::numbers::pi / 8);
-    sprites_.push_back(left_foot);
-    sprites_relative_positions_.push_back(Vector2d(-size.x / 2, size.y / 2));
-
-    Sprite right_foot(RectTexture(0xff424242, size.x / 5, size.y / 3));
-    right_foot.set_center(size.x / 10, 0);
-    right_foot.rotate(-std::numbers::pi / 8);
-    sprites_.push_back(right_foot);
-    sprites_relative_positions_.push_back(Vector2d(size.x / 2, size.y / 2));
+    return {sprites_relative_positions_.size() - 1, colliders_relative_positions_.size() - 1};
 }
 
-void Rocket::setup_colliders()
+RectTexture Rocket::draw_rocket_body()
 {
     Vector2d size = transform_.get_size();
-    double one_by_sqrt2 = 1.0 / std::sqrt(2);
 
-    RectCollider main(Vector2d(size.x, size.y - size.x / 4));
-    main.set_pivot(Vector2d(size.x / 2, size.y / 2));
-    colliders_.push_back(main);
-    colliders_relative_positions_.push_back(Vector2d(0, size.x / 4));
+    // Area for roof with diagonal (size.x / 4)
+    RectTexture body(Color::White, size.x, size.y - size.x / 4);
+    size = body.get_size();
 
-    RectCollider main_roof(Vector2d(one_by_sqrt2 * size.x, one_by_sqrt2 * size.x));
-    main_roof.set_pivot(Vector2d(one_by_sqrt2 * size.x / 2, one_by_sqrt2 * size.x / 2));
-    main_roof.rotate(std::numbers::pi / 4);
-    colliders_.push_back(main_roof);
-    colliders_relative_positions_.push_back(Vector2d(0, -(size.y - size.x / 2) / 2));
+    double external_window_radius = size.x / 4;
+    double internal_window_radius = size.x / 5;
+    Vector2d window_center = size / 2;
 
-    RectCollider left_foot(Vector2d(size.x / 5, size.y / 3));
-    left_foot.set_pivot(Vector2d(size.x / 10, 0));
-    left_foot.rotate(std::numbers::pi / 4);
-    colliders_.push_back(left_foot);
-    colliders_relative_positions_.push_back(Vector2d(-size.x / 2, size.y / 2));
+    body.draw_circle(Color::Black, window_center, external_window_radius);
+    body.draw_circle(Color::Cyan, window_center, internal_window_radius);
 
-    RectCollider right_foot(Vector2d(size.x / 5, size.y / 3));
-    right_foot.set_pivot(Vector2d(size.x / 10, 0));
-    right_foot.rotate(-std::numbers::pi / 4);
-    colliders_.push_back(right_foot);
-    colliders_relative_positions_.push_back(Vector2d(size.x / 2, size.y / 2));
+    return body;
+}
+
+RectTexture Rocket::draw_rocket_fire()
+{
+    Vector2d fire_size = Vector2d(transform_.get_size().x, transform_.get_size().y / 2);
+    RectTexture fire(Color(0, 0, 0, 0), fire_size);
+
+    for (size_t y = 0; y < fire_size.y; ++y)
+    {
+        size_t row_len     = 0.7 * (fire_size.y - y) * fire_size.x / fire_size.y;
+        size_t left_bound  = (fire_size.x - row_len) / 2;
+        size_t right_bound = fire_size.x - (fire_size.x - row_len) / 2;
+
+        for (size_t x = left_bound + 1; x < right_bound; ++x)
+        {
+            Color color = Color::Red;
+            double intensity = std::numbers::e - std::exp(y / fire_size.y);
+            color.set_red  (std::min(255, (int)(255 * intensity) + rand() % 50));
+            color.set_green(std::min(255, (int)(150 * intensity) + rand() % 20));
+            color.set_blue (std::min(255, (int)(50  * intensity) + rand() % 10));
+
+            fire.set_pixel_color(x, y, color);
+
+        }
+    }
+
+    return fire;
 }
