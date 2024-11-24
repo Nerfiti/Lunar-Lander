@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "RectTexture.h"
 
 RectTexture::RectTexture(Color color, size_t width, size_t height):

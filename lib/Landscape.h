@@ -2,20 +2,21 @@
 
 #include <cstdint>
 #include <map>
+#include <vector>
 
 #include "RectCollider.h"
 
 class Landscape final
 {
     public:
-        Landscape(uint32_t length);
+        Landscape();
 
         void add_point(uint32_t x, uint32_t y);
 
         uint32_t get_height(uint32_t x);
         uint32_t get_height_naive(uint32_t x) const;
 
-        bool check_collision(const RectCollider &collider) const;
+        bool check_collision(const RectCollider &collider, std::vector<CollisionInfo> &info) const;
 
     private:
         using ground_t = std::map<uint32_t, uint32_t>;

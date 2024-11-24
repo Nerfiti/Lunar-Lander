@@ -42,10 +42,16 @@ class Collider
         bool check_AABB_AABB_collision(const AABB &other) const;
         bool check_AABB_segment_collision(const Segment &other) const;
 
-        virtual bool check_collision(const Segment& other) const = 0;
-        virtual bool check_collision(const RectCollider& other) const = 0;
+        virtual std::pair<bool, Vector2d> check_collision(const Segment& other) const = 0;
+        virtual std::pair<bool, Vector2d> check_collision(const RectCollider& other) const = 0;
 
         friend class RectCollider;
     private:
         AABB box_;
+};
+
+struct CollisionInfo
+{
+    Vector2d mtv;
+    Vector2d normal;
 };

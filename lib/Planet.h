@@ -13,7 +13,7 @@ class Planet final
 
         void draw(uint32_t *buffer, size_t width, size_t height);
 
-        bool check_collision(const RectCollider &collider) const;
+        bool check_collision(const RectCollider &collider, std::vector<CollisionInfo> &info, float dt) const;
 
     private:
         Landscape ground_;

@@ -50,12 +50,37 @@ void Sprite::move(double x, double y)
     transform_.move(x, y);
 }
 
+void Sprite::move(Vector2d offset)
+{
+    transform_.move(offset);
+}
+
 void Sprite::rotate(double phi)
 {
     transform_.rotate(phi);
 }
 
-void Sprite::draw(uint32_t *buffer, size_t width, size_t height)
+void Sprite::set_position(double x, double y)
+{
+    set_position(Vector2d(x, y));
+}
+
+void Sprite::set_position(Vector2d position)
+{
+    transform_.set_position(position);
+}
+
+RectTransform &Sprite::get_transform()
+{
+    return transform_;
+}
+
+const RectTransform &Sprite::get_transform() const
+{
+    return transform_;
+}
+
+void Sprite::draw(uint32_t *buffer, size_t width, size_t height) const
 {
     for (int y = 0; y < rect_.get_height(); ++y)
     {
@@ -83,7 +108,7 @@ void Sprite::draw(uint32_t *buffer, size_t width, size_t height)
     }
 }
 
-void Sprite::draw_pixel_with_interpolation(uint32_t *buffer, size_t width, size_t height, double x, double y, Color color)
+void Sprite::draw_pixel_with_interpolation(uint32_t *buffer, size_t width, size_t height, double x, double y, Color color) const
 {
     if (x < 0 || x >= width || y < 0 || y >= height)
         return;
@@ -96,21 +121,8 @@ void Sprite::draw_pixel_with_interpolation(uint32_t *buffer, size_t width, size_
     double x_frac = x - x_floor;
     double y_frac = y - y_floor;
 
-    // int top_horizontal_impact = 2 * 255 * y_frac;
-    // int right_up_alpha   = std::min(255, static_cast<int>(top_horizontal_impact * x_frac));
-    // int left_up_alpha    = std::min(255, top_horizontal_impact - right_up_alpha);
-    // int left_down_alpha  = std::min(255, 255 - right_up_alpha);
-    // int right_down_alpha = std::min(255, 255 - left_up_alpha);
-
-    buffer[y_floor * width + x_floor] = color;//.set_alpha(left_down_alpha);
+    buffer[y_floor * width + x_floor] = color.blend(buffer[y_floor * width + x_floor]);
 
     if (x_frac > 0.5 && x_ceil < width)
-        buffer[y_floor * width + x_ceil] = color;//.set_alpha(right_down_alpha);
-
-    // if (y_ceil >= height)
-    //     return;
-
-    // buffer[y_ceil * width + x_floor] = color;//.set_alpha(left_up_alpha);
-    // buffer[y_ceil * width + x_ceil ] = color;//.set_alpha(right_up_alpha);
-
+        buffer[y_floor * width + x_ceil] = color.blend(buffer[y_floor * width + x_ceil]);
 }

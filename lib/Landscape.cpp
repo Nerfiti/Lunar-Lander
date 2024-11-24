@@ -1,6 +1,6 @@
 #include "Landscape.h"
 
-Landscape::Landscape(uint32_t length):
+Landscape::Landscape():
     ground_points_(),
     prev_point_(ground_points_.end())
     {}
@@ -71,21 +71,36 @@ uint32_t Landscape::get_height_naive(uint32_t x) const
     return interpolate(x, x_left, x_right, y_left, y_right);
 }
 
-bool Landscape::check_collision(const RectCollider &collider) const
+bool Landscape::check_collision(const RectCollider &collider, std::vector<CollisionInfo> &info) const
 {
+    info.clear();
+
     int x_min = collider.get_AABB().left;
     int x_max = collider.get_AABB().right;
 
+    if (x_max < 0)
+        return false;
+
     auto end_indicator = ground_points_.upper_bound(x_max);
+    if (end_indicator == ground_points_.begin())
+        return false;
     if (end_indicator != ground_points_.end())
         ++end_indicator;
 
-    auto it = ground_points_.lower_bound(x_min);
-    auto prev_it = it;
-    if (it != ground_points_.begin())
-        --prev_it;
-    else
-        ++it;
+    auto it = ground_points_.begin();
+    auto prev_it = it++;
+
+    if (x_min >= 0)
+    {
+        auto it = ground_points_.lower_bound(x_min);
+        auto prev_it = it;
+        if (it != ground_points_.begin())
+            --prev_it;
+        else
+            ++it;
+    }
+
+    bool collision = false;
 
     while (it != end_indicator)
     {
@@ -96,16 +111,24 @@ bool Landscape::check_collision(const RectCollider &collider) const
 
         Segment segment(first_point, second_point);
 
-        if (collider.check_AABB_segment_collision(segment) && collider.check_collision(segment))
-            return true;
-
+        if (collider.check_AABB_segment_collision(segment))
+        {
+            std::pair<bool, Vector2d> mtv_if_collision = collider.check_collision(segment);
+            if (mtv_if_collision.first)
+            {
+                collision = true;
+                Vector2d mtv = mtv_if_collision.second.y > 0 ? -mtv_if_collision.second : mtv_if_collision.second;
+                Vector2d normal = segment.get_normal().normalize();
+                normal = normal.y > 0 ? -normal : normal;
+                info.emplace_back(mtv, normal);
+            }
+        }
         ++it;
         ++prev_it;
     }
 
-    return false;
+    return collision;
 }
-
 
 int64_t Landscape::try_in_cache(uint32_t x) const
 {

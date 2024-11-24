@@ -16,7 +16,9 @@ Segment::Segment(Vector2d first, Vector2d second):
 
 Vector2d Segment::get_normal() const
 {
-    return Vector2d(-(a_y - b_y), a_x - b_x);
+    Vector2d a(a_x, a_y);
+    Vector2d b(b_x, b_y);
+    return (b - a).normal();
 }
 
 AABB::AABB(double left_bound, double right_bound, double top_bound, double bottom_bound):

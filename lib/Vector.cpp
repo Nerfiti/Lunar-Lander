@@ -2,7 +2,15 @@
 
 #include "Vector.h"
 
-Vector2d::Vector2d(double x_coord, double y_coord):
+Vector2d::Vector2d():
+    Vector2d(0, 0)
+    {}
+
+Vector2d::Vector2d(double coords):
+    Vector2d(coords, coords)
+    {}
+
+Vector2d::Vector2d(double x_coord = 0, double y_coord = 0):
     x(x_coord),
     y(y_coord)
     {}
@@ -20,6 +28,11 @@ double Vector2d::norm_sq() const
 double Vector2d::norm() const
 {
     return std::sqrt(norm_sq());
+}
+
+Vector2d &Vector2d::normalize()
+{
+    return *this /= norm();
 }
 
 Vector2d Vector2d::normal() const

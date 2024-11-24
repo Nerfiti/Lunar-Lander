@@ -20,8 +20,15 @@ class Sprite
         void set_expand(bool expand);
 
         void move(double x, double y);
+        void move(Vector2d offset);
         void rotate(double phi);
-        void draw(uint32_t *buffer, size_t width, size_t height);
+        void draw(uint32_t *buffer, size_t width, size_t height) const;
+
+        void set_position(double x, double y);
+        void set_position(Vector2d position);
+
+        RectTransform &get_transform();
+        const RectTransform &get_transform() const;
 
     protected:
         RectTransform transform_;
@@ -30,5 +37,5 @@ class Sprite
         RectTexture rect_;
         bool expand_on_rotate_;
 
-        void draw_pixel_with_interpolation(uint32_t *buffer, size_t width, size_t height, double x, double y, Color color);
+        void draw_pixel_with_interpolation(uint32_t *buffer, size_t width, size_t height, double x, double y, Color color) const;
 };

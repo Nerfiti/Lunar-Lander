@@ -9,25 +9,27 @@ RectCollider::RectCollider(Vector2d size, Vector2d position, Vector2d pivot, dou
     need_update_vertices(true)
     { update_AABB(); }
 
-bool RectCollider::check_collision(const Segment& other) const
+std::pair<bool, Vector2d> RectCollider::check_collision(const Segment& other) const
 {
     if (!box_.is_intersect(AABB(other)))
-        return false;
+        return {false, Vector2d()};
 
     static constexpr size_t Vertices_num_in_segment = 2;
     std::array<Vector2d, Vertices_num_in_segment> segment_vertices;
     segment_vertices[0] = Vector2d(other.a_x, other.a_y);
     segment_vertices[1] = Vector2d(other.b_x, other.b_y);
 
-    return !SAT_check(get_vertices(), segment_vertices);
+    auto [axis_exists, mtv] = SAT_check(get_vertices(), segment_vertices);
+    return {!axis_exists, mtv};
 }
 
-bool RectCollider::check_collision(const RectCollider& other) const
+std::pair<bool, Vector2d> RectCollider::check_collision(const RectCollider& other) const
 {
     if (!box_.is_intersect(other.get_AABB()))
-        return false;
+        return {false, Vector2d()};
 
-    return !SAT_check(get_vertices(), other.get_vertices());
+    auto [axis_exists, mtv] = SAT_check(get_vertices(), other.get_vertices());
+    return {!axis_exists, mtv};
 }
 
 void RectCollider::move(double x, double y)
@@ -47,8 +49,6 @@ void RectCollider::move(Vector2d offset)
     move(offset.x, offset.y);
 }
 
-
-///TODO: small angles rotate optimization (don't need to update vertices after each rotation)
 void RectCollider::rotate(double angle)
 {
     transform_.rotate(angle);
@@ -106,47 +106,67 @@ void RectCollider::update_AABB()
 }
 
 template<size_t first_vertices, size_t second_vertices>
-bool RectCollider::SAT_check(const std::array<Vector2d, first_vertices> &lhs,
-                             const std::array<Vector2d, second_vertices> &rhs) const
+std::pair<bool, Vector2d> RectCollider::SAT_check(const std::array<Vector2d, first_vertices> &lhs,
+                                                  const std::array<Vector2d, second_vertices> &rhs) const
 {
-    if (SAT_check_only_first_edges(lhs, rhs))
-        return true;
-    if (SAT_check_only_first_edges(rhs, lhs))
-        return true;
+    std::pair<bool, Vector2d> first_mtv_if_axis_exists = SAT_check_only_first_edges(lhs, rhs);
+    if (first_mtv_if_axis_exists.first)
+        return {true, Vector2d()};
 
-    return false;
+    std::pair<bool, Vector2d> second_mtv_if_axis_exists = SAT_check_only_first_edges(rhs, lhs);
+    if (second_mtv_if_axis_exists.first)
+        return {true, Vector2d()};
+
+    Vector2d mtv = first_mtv_if_axis_exists.second.norm_sq() > second_mtv_if_axis_exists.second.norm_sq()
+                        ? second_mtv_if_axis_exists.second
+                        : first_mtv_if_axis_exists.second;
+    return {false, mtv};
 }
 
 template<size_t first_vertices, size_t second_vertices>
-bool RectCollider::SAT_check_only_first_edges(const std::array<Vector2d, first_vertices> &lhs, 
-                                              const std::array<Vector2d, second_vertices> &rhs) const
+std::pair<bool, Vector2d> RectCollider::SAT_check_only_first_edges(const std::array<Vector2d, first_vertices> &lhs, 
+                                                                   const std::array<Vector2d, second_vertices> &rhs) const
 {
     if (first_vertices == 0)
-        return true;
+        return {true, Vector2d()};
 
+    Vector2d min_target_axis = lhs[0] - lhs[first_vertices - 1];
+    auto [axis_exists, translation] = SAT_check_one_axis(lhs, rhs, min_target_axis);
+    if (axis_exists)
+        return {true, Vector2d()};
+
+
+    double min_translation = translation;
     for (size_t edge_id = 0; edge_id < first_vertices - 1; ++edge_id)
     {
         Vector2d target_axis = (lhs[edge_id + 1] - lhs[edge_id]).normal();
-        if (SAT_check_one_axis(lhs, rhs, target_axis))
-            return true;
+        auto [axis_exists, translation] = SAT_check_one_axis(lhs, rhs, target_axis);
+        if (axis_exists)
+        {
+            return {true, Vector2d()};
+        }
+        else if (translation < min_translation)
+        {
+            min_target_axis = target_axis;
+            min_translation = translation;
+        }
     }
 
-    Vector2d target_axis = lhs[0] - lhs[first_vertices - 1];
-    return SAT_check_one_axis(lhs, rhs, target_axis);
+    return {false, min_target_axis / min_target_axis.norm_sq() * min_translation};
 }
 
 template<size_t first_vertices, size_t second_vertices>
-bool RectCollider::SAT_check_one_axis(const std::array<Vector2d,  first_vertices> &lhs,
-                                     const std::array<Vector2d, second_vertices> &rhs,
-                                     Vector2d target_axis) const
+std::pair<bool, double> RectCollider::SAT_check_one_axis(const std::array<Vector2d,  first_vertices> &lhs,
+                                                         const std::array<Vector2d, second_vertices> &rhs,
+                                                         Vector2d target_axis) const
 {
     Vector2d first  = get_min_max_projection_coord(lhs, target_axis);
     Vector2d second = get_min_max_projection_coord(rhs, target_axis);
 
     if (first.x > second.y || first.y < second.x)
-        return true;
+        return {true, 0.0};
 
-    return false;
+    return {false, std::min(first.y - second.x, second.y - first.x)};
 }
 
 template<size_t number_of_vertices>

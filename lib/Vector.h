@@ -2,7 +2,9 @@
 
 struct Vector2d final
 {
-    explicit Vector2d(double x_coord = 0, double y_coord = 0);
+    explicit Vector2d();
+    explicit Vector2d(double coords);
+    explicit Vector2d(double x_coord, double y_coord);
 
     double x;
     double y;
@@ -10,6 +12,8 @@ struct Vector2d final
     double dot(const Vector2d &other) const;
     double norm_sq() const;
     double norm() const;
+
+    Vector2d &normalize();
 
     Vector2d normal() const;
 

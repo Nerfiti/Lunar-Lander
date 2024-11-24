@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <memory.h>
+#include <unistd.h>
 
 #include "Engine.h"
 #include "Planet.h"
@@ -14,14 +15,14 @@
 */
 namespace
 {
-    Rocket rocket(RectTexture(Color::White, 50, 80), true);
+    Rocket rocket(Vector2d(50, 80), true);
     Planet planet(SCREEN_WIDTH, SCREEN_HEIGHT);
 };
 
 static void handle_input();
 static void key_press_callback(int vk_key_code);
 static void key_release_callback(int vk_key_code);
-static void handle_collisions();
+static void handle_collisions(float dt);
 static void show_fps(float dt);
 static void update_all(float dt);
 
@@ -35,7 +36,7 @@ void initialize()
     planet.generate_landscape(50, SCREEN_HEIGHT / 4, 150);
 
     rocket.set_center(25, 40);
-    rocket.move(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    rocket.move(SCREEN_WIDTH / 10, SCREEN_HEIGHT / 10);
 }
 
 void act(float dt)
@@ -43,7 +44,10 @@ void act(float dt)
     handle_input();
 
     update_all(dt);
-    handle_collisions();
+    handle_collisions(dt);
+
+    if (!rocket.is_alive())
+        schedule_quit_game();
 
     show_fps(dt);
 }
@@ -53,8 +57,8 @@ void draw()
     auto buffer_as_1D = reinterpret_cast<uint32_t *>(buffer);
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
 
-    planet.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
     rocket.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
+    planet.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 /*
@@ -159,10 +163,23 @@ static void key_release_callback(int vk_key_code)
     }
 }
 
-static void handle_collisions()
+static void handle_collisions(float dt)
 {
-    if (planet.check_collision(rocket.get_collider()))
-        std::cerr << "COLLISION\n";
+    static std::vector<CollisionInfo> info;
+    static constexpr size_t Probable_max_number_of_mtvs = 8;
+    info.reserve(Probable_max_number_of_mtvs);
+
+    const auto &colliders = rocket.get_colliders();
+    size_t number_of_colliders = colliders.size();
+    for (size_t i = 0; i < number_of_colliders; ++i)
+    {
+        bool mtv_if_collision = planet.check_collision(colliders[i], info, dt);
+        if (mtv_if_collision)
+        {
+            for (const auto &collision_info : info)
+                rocket.apply_collision_response(i, collision_info, dt, info.size());
+        }
+    }
 }
 
 static void show_fps(float dt)

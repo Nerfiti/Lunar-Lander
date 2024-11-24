@@ -14,8 +14,8 @@ class RectCollider final : public Collider
 
         RectCollider(Vector2d size, Vector2d position = Vector2d(), Vector2d pivot = Vector2d(), double angle = 0.0);
 
-        virtual bool check_collision(const Segment& other) const override;
-        virtual bool check_collision(const RectCollider& other) const override;
+        virtual std::pair<bool, Vector2d> check_collision(const Segment& other) const override;
+        virtual std::pair<bool, Vector2d> check_collision(const RectCollider& other) const override;
 
         void move(double x, double y);
         void move(Vector2d offset);
@@ -36,17 +36,17 @@ class RectCollider final : public Collider
         void update_AABB();
 
         template<size_t first_vertices, size_t second_vertices>
-        bool SAT_check(const std::array<Vector2d, first_vertices> &lhs,
-                       const std::array<Vector2d, second_vertices> &rhs) const;
+        std::pair<bool, Vector2d> SAT_check(const std::array<Vector2d, first_vertices> &lhs,
+                                            const std::array<Vector2d, second_vertices> &rhs) const;
 
         template<size_t first_vertices, size_t second_vertices>
-        bool SAT_check_only_first_edges(const std::array<Vector2d,  first_vertices> &lhs,
-                                        const std::array<Vector2d, second_vertices> &rhs) const;
+        std::pair<bool, Vector2d> SAT_check_only_first_edges(const std::array<Vector2d,  first_vertices> &lhs,
+                                                             const std::array<Vector2d, second_vertices> &rhs) const;
 
         template<size_t first_vertices, size_t second_vertices>
-        bool SAT_check_one_axis(const std::array<Vector2d,  first_vertices> &lhs,
-                                const std::array<Vector2d, second_vertices> &rhs,
-                                Vector2d target_axis) const;
+        std::pair<bool, double> SAT_check_one_axis(const std::array<Vector2d,  first_vertices> &lhs,
+                                                   const std::array<Vector2d, second_vertices> &rhs,
+                                                   Vector2d target_axis) const;
 
         template<size_t number_of_vertices>
         Vector2d get_min_max_projection_coord(const std::array<Vector2d, number_of_vertices> &array, Vector2d target_axis) const;
