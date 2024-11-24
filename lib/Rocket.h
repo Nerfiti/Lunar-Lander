@@ -29,27 +29,44 @@ class Rocket final
             PREV_PASSIVE_MODE
         };
 
+        enum class RocketState
+        {
+            IN_FLIGHT,
+            LANDED,
+            CRASHED
+        };
+
     public:
         void update(double dt);
 
         /*
         *   Static preferences of the rocket (getters/setters)
         */
-        void set_mass(double mass);
+        void set_mass                   (double mass);
         void set_increasing_thrust_speed(double delta_thrust);
-        void set_max_rotation_thrust(double max_rotation_thrust);
-        void set_max_thrust(double max_thrust);
-        void set_max_fuel(double max_fuel);
-        void set_max_hydrazine(double max_fuel);
-        void set_fuel_consumption(double fuel_per_thrust);
-        void set_hydrazine_consumption(double hydrazine_per_thrust);
-        void set_gravity_acceleration(double g_x, double g_y);
-        void set_stabilization_treshold(double treshold_speed);
+        void set_max_rotation_thrust    (double max_rotation_thrust);
+        void set_max_thrust             (double max_thrust);
+        void set_max_fuel               (double max_fuel);
+        void set_max_hydrazine          (double max_fuel);
+        void set_fuel_consumption       (double fuel_per_thrust);
+        void set_hydrazine_consumption  (double hydrazine_per_thrust);
+        void set_gravity_acceleration   (double g_x, double g_y);
+        void set_stabilization_treshold (double treshold_speed);
+
+        double get_mass         () const;
+        double get_max_fuel     () const;
+        double get_max_hydrazine() const;
 
         /*
         *   Dynamic preferences of the rocket (getters/setters)
         */
-        bool is_alive() const;
+        RocketState get_state() const;
+        double get_fuel() const;
+        double get_hydrazine() const;
+
+        /*
+        *   Methods for rocket control
+        */
         void toggle_engine(EngineMode mode);
         void toggle_rcs(RcsEngineMode RCS_mode);
         void switch_rcs_stabilization_mode();
@@ -87,7 +104,7 @@ class Rocket final
         double max_hydrazine_;
         double hydrazine_per_thrust_;
         double treshold_speed_for_stabilize_;
-        Vector2d g_;
+        Vector2d free_fall_accel_;
 
         RectTransform transform_;
         /*
@@ -118,7 +135,7 @@ class Rocket final
         std::pair<size_t, size_t> setup_part(RectTexture texture, Vector2d center,
                                              Vector2d relative_position, double angle, bool need_collider = true);
 
-        bool is_alive_;
+        RocketState state_;
 
         const double Min_speed_norm_sq_to_destroy = 150;
 

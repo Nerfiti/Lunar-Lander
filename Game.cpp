@@ -44,10 +44,13 @@ void act(float dt)
     update_all(dt);
     handle_collisions(dt);
 
-    if (!rocket.is_alive())
+    if (rocket.get_state() == Rocket::RocketState::CRASHED)
         restart();
 
-    show_fps(dt);
+    // show_fps(dt);
+
+    std::cerr << "Fuel:      " << rocket.get_fuel() << '/' << rocket.get_max_fuel() << '\n';
+    std::cerr << "Hydrazine: " << rocket.get_hydrazine() << '/' << rocket.get_max_hydrazine() << '\n';
 }
 
 void draw()

@@ -40,11 +40,11 @@ void Rocket::set_default_configuration(bool first_time)
     max_thrust_                   = 100;
     delta_thrust_                 = 100;
     max_fuel_                     = 1;
-    fuel_per_thrust_              = 0.00001;
+    fuel_per_thrust_              = 0.001;
     max_hydrazine_                = 1;
     hydrazine_per_thrust_         = 0.1;
     treshold_speed_for_stabilize_ = 0.001;
-    g_                          = Vector2d(0, 20);
+    free_fall_accel_                          = Vector2d(0, 20);
 
     set_angle(0);
     set_position(Vector2d());
@@ -60,7 +60,7 @@ void Rocket::set_default_configuration(bool first_time)
     engine_mode_ = EngineMode::IDLE;
     rcs_mode_ = RcsEngineMode::IDLE;
     prev_passive_mode_ = RcsEngineMode::IDLE;
-    is_alive_ = true;
+    state_ = RocketState::IN_FLIGHT;
 }
 
 void Rocket::update(double dt)
@@ -71,10 +71,10 @@ void Rocket::update(double dt)
 
     sprites_relative_positions_[fire_sprite_id_] += Vector2d(0, (thrust_ - old_thrust) / max_thrust_ * transform_.get_size().y / 2);
     Vector2d direction(transform_.get_sin(), -transform_.get_cos());
-    acceleration_ = g_ + thrust_ * direction / (mass_ + fuel_);
+    acceleration_ = free_fall_accel_ + thrust_ * direction / (mass_ + fuel_);
 
     fuel_ -= thrust_ * dt * fuel_per_thrust_;
-    hydrazine_ -= rotation_accel_ * (mass_ + fuel_) * dt * hydrazine_per_thrust_;
+    hydrazine_ -= std::abs(rotation_accel_) * (mass_ + fuel_) * dt * hydrazine_per_thrust_;
 
     move(velocity_ * dt);
     velocity_ += acceleration_ * dt;
@@ -94,22 +94,28 @@ void Rocket::set_max_fuel               (double max_fuel)             { max_fuel
 void Rocket::set_max_hydrazine          (double max_fuel)             { max_hydrazine_        = max_fuel;               }
 void Rocket::set_fuel_consumption       (double fuel_per_thrust)      { fuel_per_thrust_      = fuel_per_thrust;        }
 void Rocket::set_hydrazine_consumption  (double hydrazine_per_thrust) { hydrazine_per_thrust_ = hydrazine_per_thrust_;  }
-
-void Rocket::set_gravity_acceleration(double g_x, double g_y)
-{
-    g_ = Vector2d(g_x, g_y);
-}
+void Rocket::set_gravity_acceleration   (double g_x, double g_y)      { free_fall_accel_      = Vector2d(g_x, g_y);     }
 
 void Rocket::set_stabilization_treshold(double treshold_speed) { treshold_speed_for_stabilize_ = treshold_speed; }
+
+double Rocket::get_mass         () const { return mass_;          }
+
+double Rocket::get_max_fuel     () const { return max_fuel_;      }
+
+double Rocket::get_max_hydrazine() const { return max_hydrazine_; }
 
 /*
 *   Dynamic preferences of the rocket (getters/setters)
 */
-bool Rocket::is_alive() const
-{
-    return is_alive_;
-}
+Rocket::RocketState Rocket::get_state() const { return state_;     }
 
+double Rocket::get_fuel              () const { return fuel_;      }
+
+double Rocket::get_hydrazine         () const { return hydrazine_; }
+
+/*
+*   Methods for rocket control
+*/
 void Rocket::toggle_engine(EngineMode mode) { engine_mode_ = mode; }
 
 void Rocket::toggle_rcs(RcsEngineMode mode) 
@@ -150,8 +156,9 @@ void Rocket::switch_rcs_stabilization_mode()
 
 void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &info, float dt, size_t number_of_collisions)
 {
+    ///TODO: Landed state
     if (velocity_.norm_sq() > Min_speed_norm_sq_to_destroy)
-        is_alive_ = false;
+        state_ = RocketState::CRASHED;
 
     static constexpr double Min_mtv_norm_sq_to_react = 1e-15;
 
