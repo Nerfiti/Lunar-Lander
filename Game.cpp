@@ -25,15 +25,16 @@ namespace
     ///TODO: Draw icons for bars
     constexpr size_t Bars_width  = 100;
     constexpr size_t Bars_height = 20;
-    ProgressBar fuel_bar(Sprite(RectTexture(Color(0, 0, 0, 0), Bars_height, Bars_height)), 
-                                                    Vector2d(SCREEN_WIDTH - Bars_width, 0),
-                                                    Vector2d(Bars_width, Bars_height),
-                                                    Color::White, Color::Red, 0);
+    constexpr size_t Bars_offset_from_edges = 5;
+    ProgressBar fuel_bar(Sprite(RectTexture(Color(0, 0, 0, 0), Bars_height, Bars_height)),
+                                    Vector2d(SCREEN_WIDTH - Bars_width - Bars_offset_from_edges, Bars_offset_from_edges),
+                                    Vector2d(Bars_width, Bars_height),
+                                    Color::White, Color::Red, 0);
 
-    ProgressBar hydrazine_bar(Sprite(RectTexture(Color(0, 0, 0, 0), Bars_height, Bars_height)), 
-                                                    Vector2d(SCREEN_WIDTH - Bars_width, 2 * Bars_height),
-                                                    Vector2d(Bars_width, Bars_height),
-                                                    Color::White, Color::Cyan, 0);
+    ProgressBar hydrazine_bar(Sprite(RectTexture(Color(0, 0, 0, 0), Bars_height, Bars_height)),
+                                    Vector2d(SCREEN_WIDTH - Bars_width - Bars_offset_from_edges, 2 * Bars_height + Bars_offset_from_edges),
+                                    Vector2d(Bars_width, Bars_height),
+                                    Color::White, Color::Cyan, 0);
 
     //----------------------------------------------------------------
     // Game over screens
