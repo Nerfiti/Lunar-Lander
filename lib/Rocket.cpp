@@ -1,4 +1,3 @@
-#include <cmath>
 #include <numbers>
 
 #include "Rocket.h"
@@ -26,8 +25,14 @@ Rocket::Rocket(Vector2d size, bool expand):
 
     // Rocket landing legs
     auto rocket_leg = RectTexture(0xff424242, size.x / 8, size.y / 4);
-    setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0), Vector2d(-size.x / 2, size.y / 2),  std::numbers::pi / 8);
-    setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0), Vector2d( size.x / 2, size.y / 2), -std::numbers::pi / 8);
+
+    left_leg_collider_id_  = setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0),
+                                                    Vector2d(-size.x / 2, size.y / 2),
+                                                    std::numbers::pi / 8).second;
+
+    right_leg_collider_id_ = setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0),
+                                                    Vector2d( size.x / 2, size.y / 2),
+                                                    -std::numbers::pi / 8).second;
 }
 
 void Rocket::set_default_configuration(bool first_time)
@@ -44,13 +49,13 @@ void Rocket::set_default_configuration(bool first_time)
     max_hydrazine_                = 1;
     hydrazine_per_thrust_         = 0.1;
     treshold_speed_for_stabilize_ = 0.001;
-    free_fall_accel_                          = Vector2d(0, 20);
+    free_fall_accel_              = Vector2d(0, 20);
 
     set_angle(0);
     set_position(Vector2d());
 
-    velocity_      = Vector2d(0, 0);
-    acceleration_  = Vector2d(0, 0);
+    velocity_       = Vector2d(0, 0);
+    acceleration_   = Vector2d(0, 0);
     rotation_speed_ = 0;
     rotation_accel_ = 0;
     fuel_           = max_fuel_;
@@ -61,6 +66,9 @@ void Rocket::set_default_configuration(bool first_time)
     rcs_mode_ = RcsEngineMode::IDLE;
     prev_passive_mode_ = RcsEngineMode::IDLE;
     state_ = RocketState::IN_FLIGHT;
+
+    left_leg_landed  = false;
+    right_leg_landed = false;
 }
 
 void Rocket::update(double dt)
@@ -81,6 +89,9 @@ void Rocket::update(double dt)
 
     rotate(rotation_speed_ * dt);
     rotation_speed_ += rotation_accel_ * dt;
+
+    if (left_leg_landed && right_leg_landed)
+        state_ = RocketState::LANDED;
 }
 
 /*
@@ -154,19 +165,32 @@ void Rocket::switch_rcs_stabilization_mode()
     }
 }
 
+#include <iostream>
 void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &info, float dt, size_t number_of_collisions)
 {
-    ///TODO: Landed state
     if (velocity_.norm_sq() > Min_speed_norm_sq_to_destroy)
+    {
         state_ = RocketState::CRASHED;
-
+        return;
+    }
     static constexpr double Min_mtv_norm_sq_to_react = 1e-15;
 
     Vector2d mtv = info.mtv / number_of_collisions;
     const Vector2d &normal = info.normal;
 
-    if (mtv.norm_sq() < Min_mtv_norm_sq_to_react)
+    if (std::abs(normal.x) > Cos_max_inclination_angle_to_landing)
+    {
+        state_ = RocketState::CRASHED;
         return;
+    }
+
+    if (collider_id == left_leg_collider_id_)
+        left_leg_landed = true;
+    if (collider_id == right_leg_collider_id_)
+        right_leg_landed = true;
+
+    if (mtv.norm_sq() < Min_mtv_norm_sq_to_react)
+            return;
 
     move(mtv / number_of_collisions);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "RectCollider.h"
 #include "Sprite.h"
 
@@ -137,9 +139,16 @@ class Rocket final
 
         RocketState state_;
 
-        const double Min_speed_norm_sq_to_destroy = 150;
+        static constexpr double Min_speed_norm_sq_to_destroy = 150;
+        static constexpr double Max_inclination_angle_to_landing = 30;
+        static constexpr double Cos_max_inclination_angle_to_landing = std::cos(Max_inclination_angle_to_landing);
 
         size_t fire_sprite_id_;
+        size_t left_leg_collider_id_;
+        size_t right_leg_collider_id_;
+
+        bool left_leg_landed = false;
+        bool right_leg_landed = false;
 
         RectTexture draw_rocket_body();
         RectTexture draw_rocket_fire();

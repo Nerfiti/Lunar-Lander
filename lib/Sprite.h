@@ -10,9 +10,6 @@ class Sprite
         Sprite(RectTexture &&rect, bool expand = true);
         virtual ~Sprite() = default;
 
-        RectTexture &get_rect();
-        const RectTexture &get_rect() const;
-
         double get_sin_phi();
         double get_cos_phi();
 
@@ -29,6 +26,9 @@ class Sprite
 
         RectTransform &get_transform();
         const RectTransform &get_transform() const;
+
+        RectTexture &get_texture();
+        const RectTexture &get_texture() const;
 
     protected:
         RectTransform transform_;

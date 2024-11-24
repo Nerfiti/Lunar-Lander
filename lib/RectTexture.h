@@ -19,7 +19,8 @@ class RectTexture final
         void set_pixel_color(size_t x, size_t y, uint32_t color);
 
         void draw_circle(Color color, Vector2d center, double radius);
-        void draw_square(Color color, Vector2d left_bottom, Vector2d right_top);
+        void draw_rect(Color color, Vector2d position, Vector2d size, double angle);
+
 
         size_t get_width () const;
         size_t get_height() const;

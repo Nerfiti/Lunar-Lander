@@ -1,4 +1,5 @@
-#include <iostream>
+#include <cmath>
+
 #include "RectTexture.h"
 
 RectTexture::RectTexture(Color color, size_t width, size_t height):
@@ -53,14 +54,34 @@ void RectTexture::draw_circle(Color color, Vector2d center, double radius)
     }
 }
 
-void RectTexture::draw_square(Color color, Vector2d left_bottom, Vector2d right_top)
+#include <iostream>
+void RectTexture::draw_rect(Color color, Vector2d position, Vector2d size, double angle)
 {
-    size_t y_max = std::min(height_, static_cast<size_t>(right_top.y));
-    size_t x_max = std::min(width_, static_cast<size_t>(right_top.x));
+    double sin = std::sin(angle);
+    double cos = std::cos(angle);
 
-    for (size_t y = left_bottom.y; y < y_max; ++y)
-        for (size_t x = left_bottom.x; x < x_max; ++x)
-            set_pixel_color(x, y, color.blend(get_pixel_color(x, y)));
+    for (size_t y = 0; y < size.y; ++y)
+    {
+        for (size_t x = 0; x < size.x; ++x)
+        {
+            size_t x_final = x * cos - y * sin + position.x;
+            size_t y_final = x * sin + y * cos + position.y;
+
+            if (x_final >= width_ || y_final >= height_)
+                continue;
+
+            set_pixel_color(x_final, y_final, color.blend(get_pixel_color(x_final, y_final)));
+            if (x_final + 1 < width_)
+                set_pixel_color(x_final + 1, y_final, color.blend(get_pixel_color(x_final, y_final)));
+
+        }
+    }
+    // size_t y_max = std::min(height_, static_cast<size_t>(size.y));
+    // size_t x_max = std::min(width_, static_cast<size_t>(size.x));
+
+    // for (size_t y = position.y; y < y_max; ++y)
+    //     for (size_t x = position.x; x < x_max; ++x)
+    //         set_pixel_color(x, y, color.blend(get_pixel_color(x, y)));
 }
 
 size_t RectTexture::get_width() const

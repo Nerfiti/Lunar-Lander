@@ -15,16 +15,6 @@ Sprite::Sprite(RectTexture &&rect, bool expand):
     expand_on_rotate_(expand)
     {}
 
-RectTexture &Sprite::get_rect()
-{
-    return rect_;
-}
-
-const RectTexture &Sprite::get_rect() const
-{
-    return rect_;
-}
-
 double Sprite::get_sin_phi()
 {
     return transform_.get_sin();
@@ -78,6 +68,16 @@ RectTransform &Sprite::get_transform()
 const RectTransform &Sprite::get_transform() const
 {
     return transform_;
+}
+
+RectTexture &Sprite::get_texture()
+{
+    return rect_;
+}
+
+const RectTexture &Sprite::get_texture() const
+{
+    return rect_;
 }
 
 void Sprite::draw(uint32_t *buffer, size_t width, size_t height) const
