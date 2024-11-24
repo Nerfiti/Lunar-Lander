@@ -18,6 +18,8 @@ class Landscape final
 
         bool check_collision(const RectCollider &collider, std::vector<CollisionInfo> &info) const;
 
+        void clear();
+
     private:
         using ground_t = std::map<uint32_t, uint32_t>;
         ground_t ground_points_;

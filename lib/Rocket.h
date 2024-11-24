@@ -8,6 +8,8 @@ class Rocket final
     public:
         Rocket(Vector2d size, bool expand = true);
 
+        void set_default_configuration(bool first_time = false);
+
     public:
         enum class EngineMode
         {
@@ -61,6 +63,9 @@ class Rocket final
         void move(double x, double y);
         void move(Vector2d offset);
         void rotate(double angle);
+        void set_position(Vector2d position);
+        void set_position(double x, double y);
+        void set_angle(double angle);
 
         const std::vector<RectCollider> &get_colliders() const;
 
@@ -73,34 +78,34 @@ class Rocket final
         /*
         *   Static preferences of the rocket
         */
-        double mass_                         = 1;
-        double max_rotation_thrust_          = 1;
-        double max_thrust_                   = 100;
-        double delta_thrust_                 = 100;
-        double max_fuel_                     = 1;
-        double fuel_per_thrust_              = 0.00001;
-        double max_hydrazine_                = 1;
-        double hydrazine_per_thrust_         = 0.1;
-        double treshold_speed_for_stabilize_ = 0.001;
-        Vector2d g_                          = Vector2d(0, 20);
+        double mass_;
+        double max_rotation_thrust_;
+        double max_thrust_;
+        double delta_thrust_;
+        double max_fuel_;
+        double fuel_per_thrust_;
+        double max_hydrazine_;
+        double hydrazine_per_thrust_;
+        double treshold_speed_for_stabilize_;
+        Vector2d g_;
 
         RectTransform transform_;
         /*
         *   Dynamic preferences of the rocket
         */
-        Vector2d velocity_      = Vector2d(0, 0);
-        Vector2d acceleration_  = Vector2d(0, 0);
-        double rotation_speed_ = 0;
-        double rotation_accel_ = 0;
+        Vector2d velocity_;
+        Vector2d acceleration_;
+        double rotation_speed_;
+        double rotation_accel_;
 
-        double fuel_           = max_fuel_;
-        double hydrazine_      = max_hydrazine_;
+        double fuel_;
+        double hydrazine_;
 
-        double thrust_         = 0;
+        double thrust_;
 
-        EngineMode engine_mode_ = EngineMode::IDLE;
-        RcsEngineMode rcs_mode_ = RcsEngineMode::IDLE;
-        RcsEngineMode prev_passive_mode_ = RcsEngineMode::IDLE;
+        EngineMode engine_mode_;
+        RcsEngineMode rcs_mode_;
+        RcsEngineMode prev_passive_mode_;
 
         void update_thrust(double dt);
         void update_rotation_accel_();
@@ -113,9 +118,11 @@ class Rocket final
         std::pair<size_t, size_t> setup_part(RectTexture texture, Vector2d center,
                                              Vector2d relative_position, double angle, bool need_collider = true);
 
-        bool is_alive_ = true;
+        bool is_alive_;
 
         const double Min_speed_norm_sq_to_destroy = 150;
+
+        size_t fire_sprite_id_;
 
         RectTexture draw_rocket_body();
         RectTexture draw_rocket_fire();

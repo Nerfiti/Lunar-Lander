@@ -11,6 +11,7 @@ Planet::Planet(size_t width, size_t height, Color color):
 
 void Planet::generate_landscape(size_t pixels_per_line, uint32_t height_mean, uint32_t height_std)
 {
+    ground_.clear();
     static constexpr size_t Areas_count = 3;
     static constexpr size_t Min_area_size = 80;
     static constexpr size_t Max_area_size = 100;

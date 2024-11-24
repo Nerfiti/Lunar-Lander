@@ -25,6 +25,7 @@ static void key_release_callback(int vk_key_code);
 static void handle_collisions(float dt);
 static void show_fps(float dt);
 static void update_all(float dt);
+static void restart();
 
 //----------------------------------------------------------------
 // Four main functions to engine call
@@ -33,10 +34,7 @@ static void update_all(float dt);
 void initialize() 
 {
     std::srand(time(NULL));
-    planet.generate_stars();
-    planet.generate_landscape(SCREEN_WIDTH >> 5, SCREEN_HEIGHT / 4, 150);
-
-    rocket.move(SCREEN_WIDTH / 10, SCREEN_HEIGHT / 10);
+    restart();
 }
 
 void act(float dt)
@@ -47,9 +45,9 @@ void act(float dt)
     handle_collisions(dt);
 
     if (!rocket.is_alive())
-        schedule_quit_game();
+        restart();
 
-    // show_fps(dt);
+    show_fps(dt);
 }
 
 void draw()
@@ -57,8 +55,8 @@ void draw()
     auto buffer_as_1D = reinterpret_cast<uint32_t *>(buffer);
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
 
-    rocket.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
     planet.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
+    rocket.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 /*
@@ -201,4 +199,13 @@ static void show_fps(float dt)
 static void update_all(float dt)
 {
     rocket.update(dt);
+}
+
+static void restart()
+{
+    planet.generate_stars();
+    planet.generate_landscape(SCREEN_WIDTH >> 5, SCREEN_HEIGHT / 4, 150);
+
+    rocket.set_default_configuration();
+    rocket.set_position(SCREEN_WIDTH / 10, SCREEN_HEIGHT / 10);
 }

@@ -130,6 +130,11 @@ bool Landscape::check_collision(const RectCollider &collider, std::vector<Collis
     return collision;
 }
 
+void Landscape::clear()
+{
+    ground_points_.clear();
+}
+
 int64_t Landscape::try_in_cache(uint32_t x) const
 {
     const auto &[x_left, y_left] = *prev_point_;

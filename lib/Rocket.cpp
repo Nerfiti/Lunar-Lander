@@ -8,11 +8,13 @@ Rocket::Rocket(Vector2d size, bool expand):
     colliders_(),
     transform_(size)
 {
+    set_default_configuration(true);
+
     double one_by_sqrt2 = 1.0 / std::sqrt(2);
 
     // Fire of engines (no colliders)
     auto rocket_fire = draw_rocket_fire();
-    setup_part(rocket_fire, Vector2d(rocket_fire.get_width() / 2, 0), Vector2d(), 0, false);
+    fire_sprite_id_ = setup_part(rocket_fire, Vector2d(rocket_fire.get_width() / 2, 0), Vector2d(), 0, false).first;
 
     // Rocket roof (square rotated on 45 degree)
     auto rocket_roof = RectTexture(Color::Red, size.x * one_by_sqrt2, size.x * one_by_sqrt2);
@@ -28,14 +30,46 @@ Rocket::Rocket(Vector2d size, bool expand):
     setup_part(rocket_leg, Vector2d(rocket_leg.get_width() / 2, 0), Vector2d( size.x / 2, size.y / 2), -std::numbers::pi / 8);
 }
 
-#include <iostream>
+void Rocket::set_default_configuration(bool first_time)
+{
+    if (!first_time)
+        sprites_relative_positions_[fire_sprite_id_] += Vector2d(0, -thrust_ / max_thrust_ * transform_.get_size().y / 2);
+
+    mass_                         = 1;
+    max_rotation_thrust_          = 1;
+    max_thrust_                   = 100;
+    delta_thrust_                 = 100;
+    max_fuel_                     = 1;
+    fuel_per_thrust_              = 0.00001;
+    max_hydrazine_                = 1;
+    hydrazine_per_thrust_         = 0.1;
+    treshold_speed_for_stabilize_ = 0.001;
+    g_                          = Vector2d(0, 20);
+
+    set_angle(0);
+    set_position(Vector2d());
+
+    velocity_      = Vector2d(0, 0);
+    acceleration_  = Vector2d(0, 0);
+    rotation_speed_ = 0;
+    rotation_accel_ = 0;
+    fuel_           = max_fuel_;
+    hydrazine_      = max_hydrazine_;
+    thrust_         = 0;
+
+    engine_mode_ = EngineMode::IDLE;
+    rcs_mode_ = RcsEngineMode::IDLE;
+    prev_passive_mode_ = RcsEngineMode::IDLE;
+    is_alive_ = true;
+}
+
 void Rocket::update(double dt)
 {
     double old_thrust = thrust_;
     update_rotation_accel_();
     update_thrust(dt);
 
-    sprites_relative_positions_[0] += Vector2d(0, (thrust_ - old_thrust) / max_thrust_ * transform_.get_size().y / 2);
+    sprites_relative_positions_[fire_sprite_id_] += Vector2d(0, (thrust_ - old_thrust) / max_thrust_ * transform_.get_size().y / 2);
     Vector2d direction(transform_.get_sin(), -transform_.get_cos());
     acceleration_ = g_ + thrust_ * direction / (mass_ + fuel_);
 
@@ -155,7 +189,6 @@ void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &i
     if (delta_v.dot(mtv) < 0)
         return;
 
-
     const auto &rect_size = collider.get_transform().get_size();
 
     velocity_ += delta_v;
@@ -167,10 +200,10 @@ void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &i
     acceleration_ -= acceleration_.dot(mtv) * mtv / mtv.norm_sq();
 
     // Some physics
-    static constexpr size_t Inertia_factor = 3;
+    static constexpr int Inertia_factor = 3;
     Vector2d rel_pos = most_remote_point - transform_.get_position();
-    double delta_rot_speed = -Inertia_factor * (rel_pos).dot((delta_v - horizontal_velocity * friction_factor).normal());
-    delta_rot_speed /= rect_size.norm_sq() + Inertia_factor * (collider_position.norm_sq() + (rel_pos).norm_sq());
+    double delta_rot_speed = -Inertia_factor * rel_pos.dot((delta_v - horizontal_velocity * friction_factor).normal());
+    delta_rot_speed /= rect_size.norm_sq() + Inertia_factor * (collider_position.norm_sq() + rel_pos.norm_sq());
     delta_rot_speed /= number_of_collisions;
 
     rotation_speed_ += delta_rot_speed;
@@ -211,6 +244,21 @@ void Rocket::rotate(double angle)
     }
 
     transform_.rotate(angle);
+}
+
+void Rocket::set_position(Vector2d position)
+{
+    move(position - transform_.get_position());
+}
+
+void Rocket::set_position(double x, double y)
+{
+    set_position(Vector2d(x, y));
+}
+
+void Rocket::set_angle(double angle)
+{
+    rotate(angle - transform_.get_angle());
 }
 
 const std::vector<RectCollider> &Rocket::get_colliders() const
