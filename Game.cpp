@@ -5,6 +5,7 @@
 
 #include "Engine.h"
 #include "Planet.h"
+#include "ProgressBar.h"
 #include "Rocket.h"
 
 /* 
@@ -17,6 +18,19 @@ namespace
 {
     Rocket rocket(Vector2d(50, 80), true);
     Planet planet(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    ///TODO: Draw icons for bars
+    constexpr size_t Bars_width  = 100;
+    constexpr size_t Bars_height = 20;
+    ProgressBar fuel_bar(Sprite(RectTexture(Color::Purple, Bars_height, Bars_height)), 
+                                                    Vector2d(SCREEN_WIDTH - Bars_width, 0),
+                                                    Vector2d(Bars_width, Bars_height),
+                                                    Color::White, Color::Red, 0);
+
+    ProgressBar hydrazine_bar(Sprite(RectTexture(Color::Purple, Bars_height, Bars_height)), 
+                                                    Vector2d(SCREEN_WIDTH - Bars_width, 2 * Bars_height),
+                                                    Vector2d(Bars_width, Bars_height),
+                                                    Color::White, Color::Cyan, 0);
 };
 
 static void handle_input();
@@ -35,6 +49,9 @@ void initialize()
 {
     std::srand(time(NULL));
     restart();
+
+    fuel_bar.set_max_progress(rocket.get_max_fuel());
+    hydrazine_bar.set_max_progress(rocket.get_max_hydrazine());
 }
 
 void act(float dt)
@@ -60,6 +77,9 @@ void draw()
 
     planet.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
     rocket.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    fuel_bar.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
+    hydrazine_bar.draw(buffer_as_1D, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 /*
@@ -202,6 +222,9 @@ static void show_fps(float dt)
 static void update_all(float dt)
 {
     rocket.update(dt);
+
+    fuel_bar.set_progress(rocket.get_fuel());
+    hydrazine_bar.set_progress(rocket.get_hydrazine());
 }
 
 static void restart()
