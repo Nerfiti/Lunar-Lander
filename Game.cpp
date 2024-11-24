@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <memory.h>
-#include <unistd.h>
 
 #include "Engine.h"
 #include "Planet.h"
@@ -50,6 +49,8 @@ namespace
     double cur_showing_time = 0.0;
     bool player_wins = false;
     bool player_lose = false;
+
+    bool pause = false;
 };
 
 static void handle_input();
@@ -111,6 +112,9 @@ void initialize()
 void act(float dt)
 {
     handle_input();
+
+    if (pause)
+        return;
 
     if (player_lose || player_wins)
     {
@@ -236,6 +240,12 @@ static void key_press_callback(int vk_key_code)
         {
             rocket.switch_rcs_stabilization_mode();
             rocket.toggle_rcs(Rocket::RcsEngineMode::PREV_PASSIVE_MODE);
+            break;
+        }
+        case VK_SPACE:
+        {
+            pause = !pause;
+            break;
         }
         default:
         {

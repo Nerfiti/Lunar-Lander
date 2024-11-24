@@ -165,7 +165,6 @@ void Rocket::switch_rcs_stabilization_mode()
     }
 }
 
-#include <iostream>
 void Rocket::apply_collision_response(size_t collider_id, const CollisionInfo &info, float dt, size_t number_of_collisions)
 {
     if (velocity_.norm_sq() > Min_speed_norm_sq_to_destroy)

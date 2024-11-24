@@ -139,7 +139,7 @@ class Rocket final
 
         RocketState state_;
 
-        static constexpr double Min_speed_norm_sq_to_destroy = 150;
+        static constexpr double Min_speed_norm_sq_to_destroy = 200;
         static constexpr double Max_inclination_angle_to_landing = 30;
         static constexpr double Cos_max_inclination_angle_to_landing = std::cos(Max_inclination_angle_to_landing);
 

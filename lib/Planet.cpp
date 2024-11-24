@@ -36,7 +36,11 @@ void Planet::generate_landscape(size_t pixels_per_line, uint32_t height_mean, ui
     size_t cur_area = 0;
     for (size_t x = 0; x <= width_; x += pixels_per_line)
     {
-        double y_tmp = height_ - height_mean + height_std * std::sin(x / static_cast<double>(width_) * 2 * M_PI) * std::cos(x);
+        double x_part = static_cast<double>(x) / width_;
+        double y_tmp = height_ - height_mean + height_std * 
+                std::sin(x_part * 2 * M_PI) * 
+                std::cos(x);
+
         size_t y = y_tmp + generate_rand_from_to(-static_cast<int32_t>(height_std) / 10, height_std / 10);
 
         if (cur_area < Areas_count && x > area_positions[cur_area] + area_sizes[cur_area])
@@ -56,9 +60,7 @@ void Planet::generate_stars()
     size_t y_min = 1;
     size_t y_max = height_ - 2;
     for (size_t i = 0; i < Stars_count; ++i)
-    {
         stars_[i] = Vector2d(generate_rand_from_to(x_min, x_max), generate_rand_from_to(y_min, y_max));
-    }
 }
 
 void Planet::draw(uint32_t *buffer, size_t width, size_t height)
