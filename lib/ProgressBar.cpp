@@ -33,7 +33,7 @@ void ProgressBar::draw(uint32_t *buffer, size_t width, size_t height)
 
     size_t x_min = std::max(static_cast<size_t>(position_.x), 0UL);
     size_t x_max = std::min(static_cast<size_t>(position_.x + size_.x), width);
-    size_t x_divider = 0;
+    size_t x_divider = x_min;
     if (progress_ > 0 && max_progress_ > 0)
         x_divider = (progress_ / max_progress_) * (x_max - x_min) + x_min;
 
